@@ -1,0 +1,244 @@
+[
+  {
+    "hypothesis_id": "1",
+    "hypothesis_name": "Sign-in Failures (Brute Force/Bot Attacks)",
+    "hypothesis_text": "CloudTrail logs contain failed console login attempts that could indicate brute force or bot attacks",
+    "generated": {
+      "query": "SELECT \"eventTime\", \"sourceIPAddress\", \"errorMessage\", \"awsRegion\", \"userIdentityuserName\" FROM cloudtrail_events WHERE \"eventName\" = 'ConsoleLogin' AND \"errorMessage\" IS NOT NULL ORDER BY \"eventTime\" DESC",
+      "hypothesis_interpretation": "This hypothesis is looking for unsuccessful AWS console sign-in activity in CloudTrail, which may reflect password spraying, brute-force attempts, or automated bot login traffic.",
+      "query_reasoning": "I filtered on eventName = 'ConsoleLogin' to isolate console authentication events, and required a non-null errorMessage to capture failed login attempts. The selected columns match the requested output schema exactly, and I ordered by eventTime descending so the most recent failures appear first. I did not add any additional filters because the hypothesis is broad and does not specify a particular failure mode, user type, or region.",
+      "assumptions_made": [
+        "A failed console login is represented by ConsoleLogin events with a populated errorMessage field.",
+        "The hypothesis does not require restricting to a specific userIdentitytype or a specific failure message value."
+      ],
+      "confidence_score": 0.95
+    },
+    "error": null,
+    "latency_seconds": 3.6730899810791016,
+    "token_usage": {
+      "prompt_tokens": 1263,
+      "completion_tokens": 255,
+      "total_tokens": 1518
+    }
+  },
+  {
+    "hypothesis_id": "2",
+    "hypothesis_name": "Root Access Through Console",
+    "hypothesis_text": "Root user console login attempts can be identified in CloudTrail logs",
+    "generated": {
+      "query": "SELECT \"eventID\", \"eventTime\", \"sourceIPAddress\", \"userAgent\", \"eventName\", \"eventSource\", \"awsRegion\", \"eventVersion\", \"userIdentitytype\", \"eventType\", \"requestID\", \"userIdentityaccountId\", \"userIdentityprincipalId\", \"userIdentityarn\", \"userIdentityaccessKeyId\", \"userIdentityuserName\", \"errorCode\", \"errorMessage\", \"requestParametersinstanceType\" FROM cloudtrail_events WHERE \"eventName\" = 'ConsoleLogin' AND \"userIdentitytype\" = 'Root';",
+      "hypothesis_interpretation": "This hypothesis is asking for CloudTrail events that represent console login attempts made by the AWS root user, which can indicate direct root account access activity.",
+      "query_reasoning": "Console login attempts are represented by the ConsoleLogin eventName in CloudTrail. To identify root user attempts specifically, the query filters on userIdentitytype = 'Root'. The SELECT list returns exactly the requested columns and no aggregation is needed because the goal is to retrieve matching events, not summarize them.",
+      "assumptions_made": [
+        "The hypothesis refers to CloudTrail ConsoleLogin events rather than other authentication-related events.",
+        "Root user console login attempts are sufficiently identified by eventName = 'ConsoleLogin' and userIdentitytype = 'Root'."
+      ],
+      "confidence_score": 0.98
+    },
+    "error": null,
+    "latency_seconds": 33.14748406410217,
+    "token_usage": {
+      "prompt_tokens": 1326,
+      "completion_tokens": 298,
+      "total_tokens": 1624
+    }
+  },
+  {
+    "hypothesis_id": "3",
+    "hypothesis_name": "CloudTrail Disruption",
+    "hypothesis_text": "Adversaries may attempt to disrupt CloudTrail logging to evade defenses",
+    "generated": {
+      "query": "SELECT \"eventTime\", \"errorMessage\", \"userIdentityarn\", \"sourceIPAddress\", \"eventName\", \"userAgent\", \"awsRegion\" FROM cloudtrail_events WHERE \"eventSource\" = 'cloudtrail.amazonaws.com' AND (\"eventName\" = 'StopLogging' OR \"eventName\" = 'DeleteTrail' OR \"eventName\" = 'UpdateTrail' OR \"eventName\" = 'PutEventSelectors' OR \"eventName\" = 'PutInsightSelectors' OR \"eventName\" = 'StartLogging') ORDER BY \"eventTime\" DESC",
+      "hypothesis_interpretation": "This hypothesis is looking for attempts to weaken, disable, or alter AWS CloudTrail so activity is no longer recorded or is recorded less effectively, which is a common defense-evasion technique.",
+      "query_reasoning": "I filtered on the CloudTrail service as the event source because the behavior of interest is direct interaction with CloudTrail configuration and logging controls. I then matched on event names that are commonly associated with stopping logging, deleting trails, or changing event selectors, since those actions can disrupt audit visibility. The SELECT list exactly matches the required output schema, and I ordered by eventTime descending to surface the most recent potentially suspicious activity first.",
+      "assumptions_made": [
+        "The relevant CloudTrail-disruption actions are represented by the listed CloudTrail API event names, even though they are not present in the provided top-50 eventName dictionary.",
+        "A broad hunt for logging disruption should include both disabling logging and modifying trail/selectors, not only explicit StopLogging events."
+      ],
+      "confidence_score": 0.84
+    },
+    "error": null,
+    "latency_seconds": 5.315378665924072,
+    "token_usage": {
+      "prompt_tokens": 1267,
+      "completion_tokens": 350,
+      "total_tokens": 1617
+    }
+  },
+  {
+    "hypothesis_id": "4",
+    "hypothesis_name": "Unauthorized API Calls",
+    "hypothesis_text": "Unauthorized API calls (AccessDenied or UnauthorizedOperation errors) can reveal application errors or malicious activity",
+    "generated": {
+      "query": "SELECT \"eventName\", \"userIdentityarn\", count(*) AS \"count\" FROM cloudtrail_events WHERE \"errorCode\" IN ('AccessDenied', 'Client.UnauthorizedOperation') GROUP BY \"eventName\", \"userIdentityarn\";",
+      "hypothesis_interpretation": "This hypothesis is looking for CloudTrail API activity that failed due to authorization issues, which can indicate either misconfigured applications repeatedly hitting denied actions or an attacker probing permissions and attempting unauthorized operations.",
+      "query_reasoning": "I filtered on the two exact error codes that match the hypothesis: AccessDenied and Client.UnauthorizedOperation. The output schema requires grouping by event name and the calling identity ARN, so the query aggregates counts per API action and principal to show which identities are generating denied requests. I did not add any extra filters because the hypothesis is broad and does not specify a service, user type, or time window.",
+      "assumptions_made": [
+        "The hypothesis refers specifically to the exact CloudTrail error codes AccessDenied and Client.UnauthorizedOperation.",
+        "No time range or additional service scope was intended, so all matching events in the table are included."
+      ],
+      "confidence_score": 0.98
+    },
+    "error": null,
+    "latency_seconds": 6.199621915817261,
+    "token_usage": {
+      "prompt_tokens": 1273,
+      "completion_tokens": 261,
+      "total_tokens": 1534
+    }
+  },
+  {
+    "hypothesis_id": "5",
+    "hypothesis_name": "Whoami Reconnaissance",
+    "hypothesis_text": "Attackers use GetCallerIdentity API calls (similar to Unix 'whoami' command) to identify which AWS account they're using",
+    "generated": {
+      "query": "SELECT \"userIdentityarn\", \"sourceIPAddress\", \"userAgent\", count(*) AS \"count\" FROM cloudtrail_events WHERE \"eventName\" = 'GetCallerIdentity' GROUP BY \"userIdentityarn\", \"sourceIPAddress\", \"userAgent\";",
+      "hypothesis_interpretation": "This hypothesis is looking for AWS STS GetCallerIdentity activity, which is commonly used like a 'whoami' check to confirm the identity and account context of the credentials currently in use. It can indicate reconnaissance by an attacker validating access after compromise.",
+      "query_reasoning": "I filtered on the exact enumerated eventName value 'GetCallerIdentity' because the hypothesis is specifically about that API call. The output schema requires grouping by userIdentityarn, sourceIPAddress, and userAgent and returning a count of matching events, so the SELECT and GROUP BY clauses follow that exactly.",
+      "assumptions_made": [
+        "The hypothesis is intended to capture all GetCallerIdentity calls, not only suspicious ones from specific userIdentity types or error conditions.",
+        "The requested output schema takes precedence over any broader enrichment or additional filtering."
+      ],
+      "confidence_score": 0.99
+    },
+    "error": null,
+    "latency_seconds": 6.554256916046143,
+    "token_usage": {
+      "prompt_tokens": 1288,
+      "completion_tokens": 254,
+      "total_tokens": 1542
+    }
+  },
+  {
+    "hypothesis_id": "6",
+    "hypothesis_name": "Secrets Manager Access",
+    "hypothesis_text": "Adversaries may attempt to retrieve secrets (certificates, credentials, sensitive data) from AWS Secrets Manager",
+    "generated": {
+      "query": "SELECT \"eventID\", \"eventTime\", \"sourceIPAddress\", \"userAgent\", \"eventName\", \"eventSource\", \"awsRegion\", \"eventVersion\", \"userIdentitytype\", \"eventType\", \"requestID\", \"userIdentityaccountId\", \"userIdentityprincipalId\", \"userIdentityarn\", \"userIdentityaccessKeyId\", \"userIdentityuserName\", \"errorCode\", \"errorMessage\", \"requestParametersinstanceType\" FROM cloudtrail_events WHERE \"eventName\" = 'GetSecretValue' AND \"eventSource\" = 'secretsmanager.amazonaws.com';",
+      "hypothesis_interpretation": "This hypothesis is looking for AWS Secrets Manager secret retrieval activity, specifically direct calls to GetSecretValue that may indicate an adversary attempting to read stored secrets, credentials, certificates, or other sensitive data.",
+      "query_reasoning": "I filtered on the exact eventName GetSecretValue because the hypothesis explicitly says to focus only on the single most direct secret-retrieval action. I also constrained eventSource to secretsmanager.amazonaws.com to ensure the event is from AWS Secrets Manager and not another service. The SELECT list matches the required output schema exactly and returns all requested fields without aggregation or limiting, since the hypothesis expects exactly one row but does not require GROUP BY.",
+      "assumptions_made": [
+        "The CloudTrail data contains Secrets Manager events with eventSource value 'secretsmanager.amazonaws.com'.",
+        "No additional filtering by user identity, region, or error status is needed because the hypothesis only asks for direct secret retrieval via GetSecretValue."
+      ],
+      "confidence_score": 0.98
+    },
+    "error": null,
+    "latency_seconds": 4.0762457847595215,
+    "token_usage": {
+      "prompt_tokens": 1376,
+      "completion_tokens": 326,
+      "total_tokens": 1702
+    }
+  },
+  {
+    "hypothesis_id": "7",
+    "hypothesis_name": "Large EC2 Instance Creation",
+    "hypothesis_text": "Attackers may attempt to launch extra-large EC2 instances (10xlarge or bigger) for cryptomining or other resource-intensive activities",
+    "generated": {
+      "query": "SELECT \"requestParametersinstanceType\" AS \"instanceType\", COUNT(*) AS \"count\"\nFROM cloudtrail_events\nWHERE \"eventName\" = 'RunInstances'\n  AND (\n    \"requestParametersinstanceType\" ILIKE '%10xlarge%'\n    OR \"requestParametersinstanceType\" ILIKE '%12xlarge%'\n    OR \"requestParametersinstanceType\" ILIKE '%16xlarge%'\n    OR \"requestParametersinstanceType\" ILIKE '%18xlarge%'\n    OR \"requestParametersinstanceType\" ILIKE '%24xlarge%'\n    OR \"requestParametersinstanceType\" ILIKE '%32xlarge%'\n    OR \"requestParametersinstanceType\" ILIKE '%48xlarge%'\n    OR \"requestParametersinstanceType\" ILIKE '%metal%'\n  )\nGROUP BY \"requestParametersinstanceType\";",
+      "hypothesis_interpretation": "This hypothesis is looking for EC2 launch activity where unusually large instance types are requested, which can indicate cryptomining, high-resource abuse, or other compute-intensive malicious use.",
+      "query_reasoning": "RunInstances is the CloudTrail event that records EC2 launches, and the instance size is captured in requestParametersinstanceType. I filtered for instance types at or above the 10xlarge tier using pattern matching on the free-text instance type field, then grouped by the exact instance type to count how often each large size was launched.",
+      "assumptions_made": [
+        "The instance type values are stored as text in requestParametersinstanceType and may contain strings like 'm5.10xlarge' or 'c5n.18xlarge'.",
+        "'10xlarge or bigger' is interpreted as 10xlarge, 12xlarge, 16xlarge, 18xlarge, 24xlarge, 32xlarge, 48xlarge, and metal variants, since those are the common larger EC2 size suffixes."
+      ],
+      "confidence_score": 0.93
+    },
+    "error": null,
+    "latency_seconds": 4.522082090377808,
+    "token_usage": {
+      "prompt_tokens": 1272,
+      "completion_tokens": 419,
+      "total_tokens": 1691
+    }
+  },
+  {
+    "hypothesis_id": "8",
+    "hypothesis_name": "S3 Bucket Brute Force",
+    "hypothesis_text": "Attackers may brute force S3 bucket names by attempting GetBucketAcl requests",
+    "generated": {
+      "query": "SELECT \"userIdentityarn\", \"sourceIPAddress\", \"userAgent\", \"errorCode\", count(*) AS \"count\" FROM cloudtrail_events WHERE \"eventName\" = 'GetBucketAcl' AND \"eventSource\" = 's3.amazonaws.com' GROUP BY \"userIdentityarn\", \"sourceIPAddress\", \"userAgent\", \"errorCode\"",
+      "hypothesis_interpretation": "This hypothesis is looking for repeated Amazon S3 bucket ACL enumeration activity, where an actor issues GetBucketAcl requests to probe whether bucket names exist or to identify accessible buckets, which can indicate brute-force bucket discovery or reconnaissance.",
+      "query_reasoning": "I filtered on the exact S3 API action GetBucketAcl and the S3 event source to isolate bucket ACL access attempts. The query groups by the requested identity, source IP, user agent, and error code so repeated attempts and their outcomes can be summarized per actor and origin, which is useful for spotting brute-force patterns and distinguishing successful versus denied or failed requests.",
+      "assumptions_made": [
+        "GetBucketAcl is the intended S3 API for bucket-name brute-force reconnaissance in this dataset.",
+        "The requested output columns and grouping take precedence over any additional filtering such as time windows or error-code constraints."
+      ],
+      "confidence_score": 0.98
+    },
+    "error": null,
+    "latency_seconds": 3.659630537033081,
+    "token_usage": {
+      "prompt_tokens": 1286,
+      "completion_tokens": 261,
+      "total_tokens": 1547
+    }
+  },
+  {
+    "hypothesis_id": "9a",
+    "hypothesis_name": "Suspicious User Agents",
+    "hypothesis_text": "CloudTrail logs contain requests from suspicious user agents (containing 'kali', 'parrot', or 'powershell') indicating potential attacker tools",
+    "generated": {
+      "query": "SELECT \"userIdentityarn\", \"userAgent\", COUNT(*) AS \"count\"\nFROM cloudtrail_events\nWHERE LOWER(\"userAgent\") LIKE '%kali%'\n   OR LOWER(\"userAgent\") LIKE '%parrot%'\n   OR LOWER(\"userAgent\") LIKE '%powershell%'\nGROUP BY \"userIdentityarn\", \"userAgent\";",
+      "hypothesis_interpretation": "This hypothesis is looking for CloudTrail activity where the client user agent string suggests attacker tooling or a penetration-testing environment, such as Kali Linux, Parrot OS, or PowerShell-based automation.",
+      "query_reasoning": "The hypothesis is centered on free-text matching within the userAgent field, so I used case-insensitive pattern matching with LOWER() and LIKE for the three suspicious substrings. The output schema explicitly requires grouping by userIdentityarn and userAgent and returning a count of matching events, so the query selects those exact columns and aggregates with COUNT(*).",
+      "assumptions_made": [
+        "The suspicious indicators are substring matches anywhere within the userAgent field, not exact full-string values.",
+        "Case-insensitive matching is appropriate for userAgent because attacker tooling strings may vary in capitalization."
+      ],
+      "confidence_score": 0.98
+    },
+    "error": null,
+    "latency_seconds": 3.4068093299865723,
+    "token_usage": {
+      "prompt_tokens": 1284,
+      "completion_tokens": 253,
+      "total_tokens": 1537
+    }
+  },
+  {
+    "hypothesis_id": "9b",
+    "hypothesis_name": "Suspicious User Agents",
+    "hypothesis_text": "CloudTrail logs contain requests from suspicious user agents (containing 'command/*')",
+    "generated": {
+      "query": "SELECT substring(\"userAgent\" FROM 'command/\\S+') AS \"userAgent\", count(*) AS \"count\"\nFROM cloudtrail_events\nWHERE \"userAgent\" ILIKE '%command/%'\nGROUP BY \"userAgent\"",
+      "hypothesis_interpretation": "This hypothesis is looking for CloudTrail activity generated by AWS CLI-style or other tooling user agents that embed a command token, to identify potentially suspicious commands being executed against AWS APIs.",
+      "query_reasoning": "The hypothesis explicitly requires matching rows where the userAgent contains the literal token pattern 'command/*', so the WHERE clause uses ILIKE '%command/%' for case-insensitive substring matching. Because the expected output is not the full userAgent string but the extracted command token, the SELECT uses substring(userAgent FROM 'command/\\S+') and aliases it as userAgent. The results are aggregated by that extracted token with GROUP BY \"userAgent\" and counted as requested.",
+      "assumptions_made": [
+        "The 'command/*' token is always present as a contiguous non-whitespace substring in the userAgent field when relevant.",
+        "Grouping by the extracted token is sufficient even if multiple full userAgent strings share the same command token."
+      ],
+      "confidence_score": 0.98
+    },
+    "error": null,
+    "latency_seconds": 2.5623464584350586,
+    "token_usage": {
+      "prompt_tokens": 1399,
+      "completion_tokens": 255,
+      "total_tokens": 1654
+    }
+  },
+  {
+    "hypothesis_id": "10",
+    "hypothesis_name": "Permanent Key Creation",
+    "hypothesis_text": "CreateAccessKey events from IAM users (not roles) can identify creation of long-term credentials",
+    "generated": {
+      "query": "SELECT \"sourceIPAddress\", \"userIdentityarn\", \"errorCode\", \"errorMessage\" FROM cloudtrail_events WHERE \"eventName\" = 'CreateAccessKey' AND \"userIdentitytype\" = 'IAMUser';",
+      "hypothesis_interpretation": "This hypothesis is looking for IAM users creating access keys, which can indicate the creation of long-term credentials that may be used for persistent access or credential abuse.",
+      "query_reasoning": "I filtered on the exact event name CreateAccessKey to capture access key creation activity, and restricted userIdentitytype to IAMUser so the results exclude roles and focus only on human/IAM user principals. The output schema requires only the four specified columns, so the SELECT returns exactly those fields without aggregation or additional filtering.",
+      "assumptions_made": [
+        "CreateAccessKey is the relevant CloudTrail event name for IAM access key creation.",
+        "The hypothesis intends to exclude all non-IAMUser principals, including AssumedRole and Root."
+      ],
+      "confidence_score": 0.97
+    },
+    "error": null,
+    "latency_seconds": 4.813331365585327,
+    "token_usage": {
+      "prompt_tokens": 1260,
+      "completion_tokens": 228,
+      "total_tokens": 1488
+    }
+  }
+]

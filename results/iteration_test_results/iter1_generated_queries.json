@@ -1,0 +1,196 @@
+[
+  {
+    "hypothesis_id": "1",
+    "hypothesis_name": "Sign-in Failures (Brute Force/Bot Attacks)",
+    "hypothesis_text": "",
+    "generated": {
+      "query": "SELECT \"eventTime\", \"sourceIPAddress\", \"userIdentityuserName\" FROM cloudtrail_events WHERE \"eventName\" = 'ConsoleLogin' AND \"eventSource\" = 'signin.amazonaws.com' AND (\"errorMessage\" ILIKE '%failed authentication%' OR \"errorMessage\" ILIKE '%signin failure%' OR \"errorMessage\" ILIKE '%login failed%' OR \"errorCode\" IS NOT NULL OR \"eventType\" ILIKE '%Failure%')",
+      "hypothesis_interpretation": "This hypothesis is looking for failed AWS console sign-in attempts that may represent password spraying, brute force, or automated bot activity.",
+      "query_reasoning": "Console login failures in CloudTrail are typically represented by ConsoleLogin events from signin.amazonaws.com. The WHERE clause focuses on failure indicators using errorMessage, errorCode, and eventType.",
+      "assumptions_made": [
+        "Failed console sign-ins are recorded as ConsoleLogin events from signin.amazonaws.com.",
+        "Failure conditions may appear in errorMessage, errorCode, or eventType."
+      ],
+      "confidence_score": 0.91
+    },
+    "error": null,
+    "latency_seconds": 3.975,
+    "token_usage": {}
+  },
+  {
+    "hypothesis_id": "2",
+    "hypothesis_name": "Root Access Through Console",
+    "hypothesis_text": "",
+    "generated": {
+      "query": "SELECT \"eventID\", \"eventTime\", \"sourceIPAddress\", \"userIdentityuserName\" FROM cloudtrail_events WHERE LOWER(\"eventName\") = 'signin' AND LOWER(\"userIdentitytype\") = 'root';",
+      "hypothesis_interpretation": "This hypothesis is looking for CloudTrail records that indicate console sign-in activity performed by the AWS root user.",
+      "query_reasoning": "Filtered on the sign-in event name plus root identity type. Used LOWER() for case-insensitive comparison.",
+      "assumptions_made": [
+        "The CloudTrail event name for console sign-in is 'Signin'.",
+        "Root console login attempts have userIdentitytype = 'Root'."
+      ],
+      "confidence_score": 0.78
+    },
+    "error": null,
+    "latency_seconds": 3.318,
+    "token_usage": {}
+  },
+  {
+    "hypothesis_id": "3",
+    "hypothesis_name": "CloudTrail Disruption",
+    "hypothesis_text": "",
+    "generated": {
+      "query": "SELECT \"eventID\", \"eventTime\", \"eventName\", \"eventSource\", \"awsRegion\", \"userIdentitytype\", \"userIdentityarn\", \"userIdentityuserName\", \"sourceIPAddress\", \"userAgent\", \"errorCode\", \"errorMessage\" FROM cloudtrail_events WHERE (LOWER(\"eventName\") IN ('stoplogging', 'deletetrail', 'updatetrail', 'puteventselectors', 'deletereventselectors') OR LOWER(\"eventSource\") = 'cloudtrail.amazonaws.com') AND (LOWER(\"eventName\") IN ('stoplogging', 'deletetrail', 'updatetrail', 'puteventselectors', 'deletereventselectors') OR LOWER(\"errorMessage\") LIKE '%cloudtrail%' OR LOWER(\"errorCode\") LIKE '%accessdenied%')",
+      "hypothesis_interpretation": "This hypothesis looks for activity consistent with attempts to impair or disable AWS CloudTrail.",
+      "query_reasoning": "CloudTrail disruption is represented by CloudTrail API actions that directly affect logging or trail configuration.",
+      "assumptions_made": [
+        "The relevant disruptive actions are StopLogging, DeleteTrail, UpdateTrail, PutEventSelectors.",
+        "Failed attempts may use CloudTrail-related error messages."
+      ],
+      "confidence_score": 0.93
+    },
+    "error": null,
+    "latency_seconds": 4.338,
+    "token_usage": {}
+  },
+  {
+    "hypothesis_id": "4",
+    "hypothesis_name": "Unauthorized API Calls",
+    "hypothesis_text": "",
+    "generated": {
+      "query": "SELECT \"eventID\", \"eventTime\", \"eventName\", \"eventSource\", \"awsRegion\", \"sourceIPAddress\", \"userAgent\", \"userIdentitytype\", \"userIdentityarn\", \"userIdentityuserName\", \"errorCode\", \"errorMessage\" FROM cloudtrail_events WHERE \"errorCode\" ILIKE '%AccessDenied%' OR \"errorCode\" ILIKE '%UnauthorizedOperation%' OR \"errorMessage\" ILIKE '%AccessDenied%' OR \"errorMessage\" ILIKE '%UnauthorizedOperation%';",
+      "hypothesis_interpretation": "This hypothesis looks for CloudTrail API requests that failed because the caller was not authorized.",
+      "query_reasoning": "The WHERE clause matches both errorCode and errorMessage using case-insensitive pattern matching.",
+      "assumptions_made": [
+        "Authorization failures may appear in either errorCode or errorMessage.",
+        "The relevant records are not limited to a specific service or region."
+      ],
+      "confidence_score": 0.96
+    },
+    "error": null,
+    "latency_seconds": 12.794,
+    "token_usage": {}
+  },
+  {
+    "hypothesis_id": "5",
+    "hypothesis_name": "Whoami Reconnaissance",
+    "hypothesis_text": "",
+    "generated": {
+      "query": "SELECT \"eventID\", \"eventTime\", \"sourceIPAddress\", \"userIdentitytype\", \"userIdentityarn\", \"userIdentityprincipalId\", \"userIdentityaccountId\", \"userIdentityuserName\", \"userAgent\", \"awsRegion\", \"eventSource\", \"eventName\", \"errorCode\", \"errorMessage\" FROM cloudtrail_events WHERE LOWER(\"eventSource\") = 'sts.amazonaws.com' AND LOWER(\"eventName\") = 'getcalleridentity';",
+      "hypothesis_interpretation": "This hypothesis looks for AWS STS GetCallerIdentity API calls used for reconnaissance.",
+      "query_reasoning": "GetCallerIdentity is an STS action, so the query filters on sts.amazonaws.com and the specific event name.",
+      "assumptions_made": [
+        "CloudTrail records the API call with eventSource = 'sts.amazonaws.com' and eventName = 'GetCallerIdentity'."
+      ],
+      "confidence_score": 0.98
+    },
+    "error": null,
+    "latency_seconds": 4.096,
+    "token_usage": {}
+  },
+  {
+    "hypothesis_id": "6",
+    "hypothesis_name": "Secrets Manager Access",
+    "hypothesis_text": "",
+    "generated": {
+      "query": "SELECT \"eventID\", \"eventTime\", \"sourceIPAddress\", \"userIdentitytype\", \"userIdentityarn\", \"userIdentityuserName\", \"eventName\", \"eventSource\", \"awsRegion\", \"errorCode\", \"errorMessage\" FROM cloudtrail_events WHERE LOWER(\"eventSource\") = 'secretsmanager.amazonaws.com' AND LOWER(\"eventName\") IN ('getsecretvalue', 'describesecret', 'listsecrets', 'batchgetsecretvalue', 'getresourcepolicy', 'listsecretversionids', 'putresourcepolicy', 'updatesecret', 'updatesecretversionstage', 'restoresecret', 'deletesecret', 'rotatesecret', 'tagresource', 'untagresource')",
+      "hypothesis_interpretation": "This hypothesis looks for AWS Secrets Manager interactions that could reveal secrets.",
+      "query_reasoning": "Filtered on secretsmanager.amazonaws.com with a set of relevant event types covering retrieval and management.",
+      "assumptions_made": [
+        "The hypothesis covers both secret retrieval and adjacent actions.",
+        "Secrets Manager activity is identified by eventSource = 'secretsmanager.amazonaws.com'."
+      ],
+      "confidence_score": 0.93
+    },
+    "error": null,
+    "latency_seconds": 4.197,
+    "token_usage": {}
+  },
+  {
+    "hypothesis_id": "7",
+    "hypothesis_name": "Large EC2 Instance Creation",
+    "hypothesis_text": "",
+    "generated": {
+      "query": "SELECT \"eventID\", \"eventTime\", \"sourceIPAddress\", \"userIdentitytype\", \"userIdentityarn\", \"userIdentityuserName\", \"eventName\", \"eventSource\", \"awsRegion\", \"requestParametersinstanceType\" FROM cloudtrail_events WHERE \"eventSource\" = 'ec2.amazonaws.com' AND \"eventName\" IN ('RunInstances', 'CreateFleet', 'CreateLaunchTemplate', 'CreateLaunchTemplateVersion') AND \"requestParametersinstanceType\" IS NOT NULL AND (LOWER(\"requestParametersinstanceType\") LIKE '%10xlarge%' OR LOWER(\"requestParametersinstanceType\") LIKE '%metal%');",
+      "hypothesis_interpretation": "This hypothesis looks for CloudTrail activity where extra-large EC2 instances are created.",
+      "query_reasoning": "Filtered to EC2 launch events with large instance type suffixes.",
+      "assumptions_made": [
+        "Instance type is in requestParametersinstanceType.",
+        "Large instances have suffixes like 10xlarge or metal."
+      ],
+      "confidence_score": 0.78
+    },
+    "error": null,
+    "latency_seconds": 7.713,
+    "token_usage": {}
+  },
+  {
+    "hypothesis_id": "8",
+    "hypothesis_name": "S3 Bucket Brute Force",
+    "hypothesis_text": "",
+    "generated": {
+      "query": "SELECT \"eventID\", \"eventTime\", \"sourceIPAddress\", \"userIdentityuserName\", \"eventName\", \"eventSource\", \"awsRegion\", \"userIdentitytype\", \"eventType\", \"requestID\", \"userIdentityaccountId\", \"userIdentityprincipalId\", \"userIdentityarn\", \"userIdentityaccessKeyId\", \"errorCode\", \"errorMessage\" FROM cloudtrail_events WHERE LOWER(\"eventSource\") = 's3.amazonaws.com' AND LOWER(\"eventName\") = 'getbucketacl';",
+      "hypothesis_interpretation": "This hypothesis looks for S3 reconnaissance via repeated GetBucketAcl requests.",
+      "query_reasoning": "Filtered to S3 API activity and specifically GetBucketAcl.",
+      "assumptions_made": [
+        "The relevant eventName for this behavior is exactly GetBucketAcl."
+      ],
+      "confidence_score": 0.97
+    },
+    "error": null,
+    "latency_seconds": 3.927,
+    "token_usage": {}
+  },
+  {
+    "hypothesis_id": "9a",
+    "hypothesis_name": "Suspicious User Agents",
+    "hypothesis_text": "",
+    "generated": {
+      "query": "SELECT \"eventID\", \"eventTime\", \"sourceIPAddress\", \"userAgent\", \"eventName\", \"eventSource\", \"awsRegion\", \"userIdentitytype\", \"userIdentityarn\", \"userIdentityuserName\", \"errorCode\", \"errorMessage\" FROM cloudtrail_events WHERE LOWER(\"userAgent\") LIKE '%kali%' OR LOWER(\"userAgent\") LIKE '%parrot%' OR LOWER(\"userAgent\") LIKE '%powershell%';",
+      "hypothesis_interpretation": "This hypothesis looks for CloudTrail activity from user agents associated with attacker tooling.",
+      "query_reasoning": "Case-insensitive substring match on userAgent for kali, parrot, powershell.",
+      "assumptions_made": [
+        "The suspicious indicators may appear anywhere within the userAgent string."
+      ],
+      "confidence_score": 0.98
+    },
+    "error": null,
+    "latency_seconds": 6.491,
+    "token_usage": {}
+  },
+  {
+    "hypothesis_id": "9b",
+    "hypothesis_name": "Suspicious User Agents",
+    "hypothesis_text": "",
+    "generated": {
+      "query": "SELECT \"eventID\", \"eventTime\", \"sourceIPAddress\", \"userAgent\", \"eventName\", \"eventSource\", \"awsRegion\", \"userIdentitytype\", \"eventType\", \"requestID\", \"userIdentityaccountId\", \"userIdentityprincipalId\", \"userIdentityarn\", \"userIdentityaccessKeyId\", \"userIdentityuserName\", \"errorCode\", \"errorMessage\", \"requestParametersinstanceType\" FROM cloudtrail_events WHERE \"userAgent\" ILIKE '%command/%';",
+      "hypothesis_interpretation": "This hypothesis looks for CloudTrail activity from user agents containing 'command/*'.",
+      "query_reasoning": "Used ILIKE with wildcard pattern to match userAgent containing 'command/'.",
+      "assumptions_made": [
+        "The pattern 'command/' may appear anywhere in the userAgent string."
+      ],
+      "confidence_score": 0.97
+    },
+    "error": null,
+    "latency_seconds": 4.313,
+    "token_usage": {}
+  },
+  {
+    "hypothesis_id": "10",
+    "hypothesis_name": "Permanent Key Creation",
+    "hypothesis_text": "",
+    "generated": {
+      "query": "SELECT \"eventID\", \"eventTime\", \"eventName\", \"eventSource\", \"userIdentitytype\", \"userIdentityarn\", \"userIdentityuserName\", \"userIdentityprincipalId\", \"userIdentityaccountId\", \"userIdentityaccessKeyId\", \"sourceIPAddress\", \"userAgent\", \"requestID\", \"errorCode\", \"errorMessage\" FROM cloudtrail_events WHERE \"eventName\" = 'CreateAccessKey' AND \"eventSource\" = 'iam.amazonaws.com' AND LOWER(\"userIdentitytype\") = 'iamuser';",
+      "hypothesis_interpretation": "This hypothesis looks for IAM users creating new access keys (long-term credentials).",
+      "query_reasoning": "Filtered to IAM CreateAccessKey API, restricted to IAMUser identity type.",
+      "assumptions_made": [
+        "eventName for access key creation is 'CreateAccessKey'.",
+        "userIdentitytype for IAM users is 'IAMUser'."
+      ],
+      "confidence_score": 0.97
+    },
+    "error": null,
+    "latency_seconds": 3.282,
+    "token_usage": {}
+  }
+]

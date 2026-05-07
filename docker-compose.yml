@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: aistrike_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aistrike
+      POSTGRES_PASSWORD: aistrike
+      POSTGRES_DB: cloudtrail
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aistrike -d cloudtrail"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: aistrike_app
+    ports:
+      - "8501:8501"
+    environment:
+      - DATABASE_URL=postgresql+psycopg://aistrike:aistrike@postgres:5432/cloudtrail
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+
+volumes:
+  pg_data:

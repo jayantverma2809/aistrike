@@ -1,0 +1,11 @@
+openai>=1.40
+anthropic>=0.30
+pydantic>=2.6
+psycopg[binary]>=3.1
+SQLAlchemy>=2.0
+pandas>=2.2
+python-dotenv>=1.0
+tabulate>=0.9
+streamlit>=1.32
+pytest>=8.0
+kagglehub>=0.1
