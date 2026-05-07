@@ -94,7 +94,7 @@ def ingest_csv(csv_path: Path, force: bool = False) -> int:
             import kagglehub
             import shutil
             # This downloads the dataset to a cache directory
-            downloaded_dir = kagglehub.dataset_download("flaws/cloudtrailflaws")
+            downloaded_dir = kagglehub.dataset_download("nobukim/aws-cloudtrails-dataset-from-flaws-cloud")
             downloaded_path = Path(downloaded_dir) / "nineteenFeaturesDf.csv"
             if downloaded_path.exists():
                 logger.info("Successfully downloaded dataset. Moving to %s", csv_path)
