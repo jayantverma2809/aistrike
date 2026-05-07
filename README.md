@@ -1,6 +1,6 @@
 # AI Threat Hunting — Query Generation & Evaluation System
 
-Translates natural-language threat-hunting hypotheses into executable SQL queries against the [flaws.cloud CloudTrail dataset](https://www.kaggle.com/datasets/flaws/cloudtrailflaws), then scores the generated queries against provided ground-truth outcomes using Precision / Recall / F1.
+Translates natural-language threat-hunting hypotheses into executable SQL queries against the [flaws.cloud CloudTrail dataset](https://www.kaggle.com/datasets/nobukim/aws-cloudtrails-dataset-from-flaws-cloud?select=nineteenFeaturesDf.csv), then scores the generated queries against provided ground-truth outcomes using Precision / Recall / F1.
 
 ---
 
