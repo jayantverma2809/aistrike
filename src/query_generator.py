@@ -64,6 +64,7 @@ class GeneratedQueryResult(BaseModel):
     hypothesis_id: str
     hypothesis_name: str
     hypothesis_text: str
+    model_name: str = "unknown"
     generated: Optional[GeneratedQuery] = None
     error: Optional[str] = None
     latency_seconds: float = 0.0
@@ -115,10 +116,12 @@ class QueryGenerator:
         hyp_name = hypothesis.get("name", "")
         hyp_text = hypothesis.get("hypothesis", "")
 
+        from src.config import get_llm_model
         result = GeneratedQueryResult(
             hypothesis_id=hyp_id,
             hypothesis_name=hyp_name,
             hypothesis_text=hyp_text,
+            model_name=get_llm_model()
         )
 
         expected_df = self._ground_truth.get(hyp_id)

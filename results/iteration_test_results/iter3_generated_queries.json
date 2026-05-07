@@ -19,7 +19,8 @@
       "prompt_tokens": 1263,
       "completion_tokens": 255,
       "total_tokens": 1518
-    }
+    },
+    "model_name": "gpt-5.4-mini"
   },
   {
     "hypothesis_id": "2",
@@ -41,7 +42,8 @@
       "prompt_tokens": 1326,
       "completion_tokens": 298,
       "total_tokens": 1624
-    }
+    },
+    "model_name": "gpt-5.4-mini"
   },
   {
     "hypothesis_id": "3",
@@ -63,7 +65,8 @@
       "prompt_tokens": 1267,
       "completion_tokens": 350,
       "total_tokens": 1617
-    }
+    },
+    "model_name": "gpt-5.4-mini"
   },
   {
     "hypothesis_id": "4",
@@ -85,7 +88,8 @@
       "prompt_tokens": 1273,
       "completion_tokens": 261,
       "total_tokens": 1534
-    }
+    },
+    "model_name": "gpt-5.4-mini"
   },
   {
     "hypothesis_id": "5",
@@ -107,7 +111,8 @@
       "prompt_tokens": 1288,
       "completion_tokens": 254,
       "total_tokens": 1542
-    }
+    },
+    "model_name": "gpt-5.4-mini"
   },
   {
     "hypothesis_id": "6",
@@ -129,7 +134,8 @@
       "prompt_tokens": 1376,
       "completion_tokens": 326,
       "total_tokens": 1702
-    }
+    },
+    "model_name": "gpt-5.4-mini"
   },
   {
     "hypothesis_id": "7",
@@ -151,7 +157,8 @@
       "prompt_tokens": 1272,
       "completion_tokens": 419,
       "total_tokens": 1691
-    }
+    },
+    "model_name": "gpt-5.4-mini"
   },
   {
     "hypothesis_id": "8",
@@ -173,7 +180,8 @@
       "prompt_tokens": 1286,
       "completion_tokens": 261,
       "total_tokens": 1547
-    }
+    },
+    "model_name": "gpt-5.4-mini"
   },
   {
     "hypothesis_id": "9a",
@@ -195,7 +203,8 @@
       "prompt_tokens": 1284,
       "completion_tokens": 253,
       "total_tokens": 1537
-    }
+    },
+    "model_name": "gpt-5.4-mini"
   },
   {
     "hypothesis_id": "9b",
@@ -217,7 +226,8 @@
       "prompt_tokens": 1399,
       "completion_tokens": 255,
       "total_tokens": 1654
-    }
+    },
+    "model_name": "gpt-5.4-mini"
   },
   {
     "hypothesis_id": "10",
@@ -239,6 +249,7 @@
       "prompt_tokens": 1260,
       "completion_tokens": 228,
       "total_tokens": 1488
-    }
+    },
+    "model_name": "gpt-5.4-mini"
   }
 ]

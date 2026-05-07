@@ -77,7 +77,7 @@ hypotheses.json
 | `ANTHROPIC_API_KEY` | Yes* | Your Anthropic API key (*required if using Anthropic) |
 | `KAGGLE_USERNAME` | No | Your Kaggle username (required for automatic dataset download) |
 | `KAGGLE_KEY` | No | Your Kaggle API key (required for automatic dataset download) |
-| `LLM_MODEL` | Yes | Model name, e.g. `gpt-4o-mini` or `claude-3-5-sonnet-20241022` |
+| `LLM_MODEL` | Yes | Model name, e.g. `gpt-5.4-mini` or `claude-3-5-sonnet-20241022` |
 | `LLM_PROVIDER` | No | `openai` (default) or `anthropic` |
 | `DATABASE_URL` | No | PostgreSQL DSN (default: `postgresql://aistrike:aistrike@localhost:5432/cloudtrail`) |
 | `CSV_PATH` | No | Path to `nineteenFeaturesDf.csv` (default: `data/nineteenFeaturesDf.csv`) |

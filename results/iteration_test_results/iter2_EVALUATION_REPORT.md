@@ -2,7 +2,9 @@
 
 ## Summary
 
-|---------------------|---------|
+| Metric | Value |
+|---|---|
+| Model Used          | gpt-5.4-mini |
 | Macro Precision     | 0.5726  |
 | Macro Recall        | 0.7273  |
 | Macro F1            | 0.5992  |

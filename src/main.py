@@ -219,7 +219,9 @@ def _run_evaluate_for_provider(
     total_tokens = sum(r.token_usage.get("total_tokens", 0) for r in query_results)
     client = get_client(provider) if provider else get_client()
     evaluator = Evaluator(ground_truth, client=client)
-    report = evaluator.evaluate_all(query_results, {"total_tokens": total_tokens})
+    
+    from src.config import get_llm_model
+    report = evaluator.evaluate_all(query_results, {"total_tokens": total_tokens}, model_name=get_llm_model())
 
     iteration = getattr(args, "iter", None)
     prov_tag = provider if multi else None

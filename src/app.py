@@ -187,7 +187,16 @@ elif page == "Complete Evaluation":
                         
                     evaluator = Evaluator(ground_truth, client=client)
                     total_tokens = sum(r.token_usage.get("total_tokens", 0) for r in results)
-                    report = evaluator.evaluate_all(results, {"total_tokens": total_tokens}, progress_cb=update_eval_progress)
+                    
+                    from src.config import get_llm_model
+                    model_name = get_llm_model()
+                    
+                    report = evaluator.evaluate_all(
+                        results, 
+                        {"total_tokens": total_tokens}, 
+                        progress_cb=update_eval_progress,
+                        model_name=model_name
+                    )
                     eval_bar.progress(1.0, text="Evaluation complete!")
                     
                     # Save
@@ -209,6 +218,7 @@ elif page == "Complete Evaluation":
                     st.success(f"Complete evaluation finished! Results saved to `results/{out_dir.name}`")
                     
                     # Show summary
+                    st.info(f"**Model Used:** {report.model_name}")
                     col1, col2, col3 = st.columns(3)
                     col1.metric("Macro Precision", f"{report.macro_precision:.4f}")
                     col2.metric("Macro Recall", f"{report.macro_recall:.4f}")

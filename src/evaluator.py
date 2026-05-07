@@ -84,6 +84,7 @@ class HypothesisScore(BaseModel):
 
 
 class EvaluationReport(BaseModel):
+    model_name: str = "unknown"
     macro_precision: float = 0.0
     macro_recall: float = 0.0
     macro_f1: float = 0.0
@@ -346,6 +347,7 @@ class Evaluator:
         query_results: list[GeneratedQueryResult],
         token_totals: dict[str, int] | None = None,
         progress_cb: Optional[Callable[[int, int, str], None]] = None,
+        model_name: str = "unknown",
     ) -> EvaluationReport:
         scores: list[HypothesisScore] = []
         total_latency = 0.0
@@ -370,6 +372,7 @@ class Evaluator:
         )
 
         return EvaluationReport(
+            model_name=model_name,
             macro_precision=round(macro_p,  4),
             macro_recall=round(macro_r,     4),
             macro_f1=round(macro_f1,        4),
@@ -399,6 +402,7 @@ def generate_markdown_report(
     lines += ["# Evaluation Report", "", "## Summary", ""]
 
     summary_rows = [
+        ["Model Used",          report.model_name],
         ["Macro Precision",     f"{report.macro_precision:.4f}"],
         ["Macro Recall",        f"{report.macro_recall:.4f}"],
         ["Macro F1",            f"{report.macro_f1:.4f}"],

@@ -1,4 +1,5 @@
 {
+  "model_name": "gpt-5.4-mini",
   "macro_precision": 0.5726,
   "macro_recall": 0.7273,
   "macro_f1": 0.5992,

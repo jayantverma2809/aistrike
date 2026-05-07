@@ -16,6 +16,7 @@ Zero-shot, schema-aware, JSON-mode prompting.
 
 - System prompt: role assignment, 6 SQL rules, full table schema, output JSON format
 - User prompt: hypothesis id, name, and description
+- Model Used: **gpt-5.4-mini** (for all iterations)
 - Settings: `temperature=0`, `seed=42`, `response_format={"type":"json_object"}`
 
 ### Baseline Results (Iteration 1)
